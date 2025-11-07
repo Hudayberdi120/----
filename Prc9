@@ -1,0 +1,196 @@
+import java.util.*;
+//Facade
+class RoomBookingSystem {
+    void bookRoom(String name, int nights) { System.out.println("Room booked for " + name + " for " + nights + " nights."); }
+    void cancelBooking(String name) { System.out.println("Booking canceled for " + name); }
+    void checkAvailability() { System.out.println("Checking room availability... Rooms available."); }
+}
+
+class RestaurantSystem {
+    void bookTable(String name, int guests) { System.out.println("Table booked for " + guests + " guests under name " + name); }
+    void orderFood(String name, String food) { System.out.println(name + " ordered " + food); }
+}
+
+class EventManagementSystem {
+    void bookEventHall(String name, int people) { System.out.println("Event hall booked for " + name + " for " + people + " people."); }
+    void orderEquipment(String equipment) { System.out.println("Equipment ordered: " + equipment); }
+}
+
+class CleaningService {
+    void scheduleCleaning(String room) { System.out.println("Cleaning scheduled for room: " + room); }
+    void performCleaning(String room) { System.out.println("Cleaning performed for room: " + room); }
+}
+
+class TaxiService {
+    void orderTaxi(String name) { System.out.println("Taxi ordered for " + name); }
+}
+
+class HotelFacade {
+    private RoomBookingSystem roomSystem;
+    private RestaurantSystem restaurant;
+    private EventManagementSystem eventSystem;
+    private CleaningService cleaning;
+    private TaxiService taxi;
+
+    HotelFacade(RoomBookingSystem roomSystem, RestaurantSystem restaurant, EventManagementSystem eventSystem, CleaningService cleaning, TaxiService taxi) {
+        this.roomSystem = roomSystem;
+        this.restaurant = restaurant;
+        this.eventSystem = eventSystem;
+        this.cleaning = cleaning;
+        this.taxi = taxi;
+    }
+
+    void bookRoomWithServices(String guest, int nights, String food) {
+        System.out.println("\n--- Booking Room with Services ---");
+        roomSystem.bookRoom(guest, nights);
+        restaurant.orderFood(guest, food);
+        cleaning.scheduleCleaning("Room for " + guest);
+    }
+
+    void organizeEvent(String company, int people, int rooms, String equipment) {
+        System.out.println("\n--- Organizing Event ---");
+        eventSystem.bookEventHall(company, people);
+        for (int i = 1; i <= rooms; i++) roomSystem.bookRoom(company + " guest " + i, 2);
+        eventSystem.orderEquipment(equipment);
+    }
+
+    void bookRestaurantWithTaxi(String name, int guests) {
+        System.out.println("\n--- Booking Restaurant and Taxi ---");
+        restaurant.bookTable(name, guests);
+        taxi.orderTaxi(name);
+    }
+
+    void cancelBooking(String guest) {
+        System.out.println("\n--- Cancel Booking ---");
+        roomSystem.cancelBooking(guest);
+    }
+
+    void requestCleaning(String room) {
+        System.out.println("\n--- Cleaning Request ---");
+        cleaning.performCleaning(room);
+    }
+}
+//Composite
+abstract class OrganizationComponent {
+    String name;
+    OrganizationComponent(String name) { this.name = name; }
+    abstract void display(String indent);
+    abstract double getBudget();
+    abstract int getEmployeeCount();
+    abstract void findEmployee(String empName);
+}
+
+class Employee extends OrganizationComponent {
+    String position;
+    double salary;
+    boolean contractor;
+
+    Employee(String name, String position, double salary, boolean contractor) {
+        super(name);
+        this.position = position;
+        this.salary = salary;
+        this.contractor = contractor;
+    }
+
+    void setSalary(double newSalary) { this.salary = newSalary; }
+
+    void display(String indent) {
+        String type = contractor ? "Contractor" : "Employee";
+        System.out.println(indent + "- " + type + ": " + name + ", " + position + ", salary=" + salary);
+    }
+
+    double getBudget() { return contractor ? 0 : salary; }
+
+    int getEmployeeCount() { return 1; }
+
+    void findEmployee(String empName) {
+        if (name.equalsIgnoreCase(empName))
+            System.out.println("Found: " + name + " (" + position + "), salary=" + salary + (contractor ? " [Contractor]" : ""));
+    }
+}
+
+class Department extends OrganizationComponent {
+    private List<OrganizationComponent> components = new ArrayList<>();
+
+    Department(String name) { super(name); }
+
+    void add(OrganizationComponent c) {
+        if (!components.contains(c)) components.add(c);
+    }
+
+    void remove(OrganizationComponent c) {
+        components.remove(c);
+    }
+
+    void display(String indent) {
+        System.out.println(indent + "+ Department: " + name);
+        for (OrganizationComponent c : components) c.display(indent + "  ");
+    }
+
+    double getBudget() {
+        double total = 0;
+        for (OrganizationComponent c : components) total += c.getBudget();
+        return total;
+    }
+
+    int getEmployeeCount() {
+        int total = 0;
+        for (OrganizationComponent c : components) total += c.getEmployeeCount();
+        return total;
+    }
+
+    void findEmployee(String empName) {
+        for (OrganizationComponent c : components) c.findEmployee(empName);
+    }
+}
+
+public class Prc9 {
+    public static void main(String[] args) {
+        RoomBookingSystem room = new RoomBookingSystem();
+        RestaurantSystem restaurant = new RestaurantSystem();
+        EventManagementSystem eventSys = new EventManagementSystem();
+        CleaningService cleaning = new CleaningService();
+        TaxiService taxi = new TaxiService();
+        HotelFacade hotel = new HotelFacade(room, restaurant, eventSys, cleaning, taxi);
+
+        hotel.bookRoomWithServices("John Smith", 3, "Steak Dinner");
+        hotel.organizeEvent("TechCorp", 50, 5, "Projector and Sound System");
+        hotel.bookRestaurantWithTaxi("Alice Brown", 4);
+        hotel.requestCleaning("Room 101");
+        hotel.cancelBooking("John Smith");
+
+        System.out.println("\n===============================");
+        System.out.println("Composite Pattern - Organization Structure");
+        System.out.println("===============================");
+
+        Department root = new Department("Head Office");
+        Department it = new Department("IT Department");
+        Department hr = new Department("HR Department");
+        Department sub = new Department("Security Team");
+
+        Employee e1 = new Employee("Alex", "Developer", 3000, false);
+        Employee e2 = new Employee("Brian", "SysAdmin", 2800, false);
+        Employee e3 = new Employee("Clara", "HR Manager", 2500, false);
+        Employee e4 = new Employee("David", "Guard", 1500, true);
+
+        it.add(e1);
+        it.add(e2);
+        hr.add(e3);
+        sub.add(e4);
+
+        root.add(it);
+        root.add(hr);
+        root.add(sub);
+
+        root.display("");
+        System.out.println("Total Employees: " + root.getEmployeeCount());
+        System.out.println("Total Budget: " + root.getBudget());
+        System.out.println("\nSearching for 'Brian':");
+        root.findEmployee("Brian");
+
+        e1.setSalary(3500);
+        System.out.println("\nAfter salary update:");
+        root.display("");
+        System.out.println("Updated Budget: " + root.getBudget());
+    }
+}
