@@ -1,0 +1,158 @@
+import java.util.ArrayList;
+import java.util.List;
+//Facade
+class TV {
+    void on() { System.out.println("TV is ON"); }
+    void off() { System.out.println("TV is OFF"); }
+    void setChannel(int channel) { System.out.println("TV channel set to " + channel); }
+}
+
+class AudioSystem {
+    void on() { System.out.println("Audio system is ON"); }
+    void off() { System.out.println("Audio system is OFF"); }
+    void setVolume(int level) { System.out.println("Audio volume set to " + level); }
+}
+
+class DVDPlayer {
+    void play() { System.out.println("DVD is playing"); }
+    void pause() { System.out.println("DVD paused"); }
+    void stop() { System.out.println("DVD stopped"); }
+}
+
+class GameConsole {
+    void on() { System.out.println("Game console is ON"); }
+    void startGame(String game) { System.out.println("Starting game: " + game); }
+}
+
+class HomeTheaterFacade {
+    private TV tv;
+    private AudioSystem audio;
+    private DVDPlayer dvd;
+    private GameConsole console;
+
+    HomeTheaterFacade(TV tv, AudioSystem audio, DVDPlayer dvd, GameConsole console) {
+        this.tv = tv;
+        this.audio = audio;
+        this.dvd = dvd;
+        this.console = console;
+    }
+
+    void watchMovie() {
+        System.out.println("\n--- Starting movie mode ---");
+        tv.on();
+        audio.on();
+        audio.setVolume(10);
+        dvd.play();
+    }
+
+    void stopMovie() {
+        System.out.println("\n--- Stopping movie mode ---");
+        dvd.stop();
+        audio.off();
+        tv.off();
+    }
+
+    void playGame(String game) {
+        System.out.println("\n--- Starting game mode ---");
+        tv.on();
+        audio.on();
+        audio.setVolume(8);
+        console.on();
+        console.startGame(game);
+    }
+
+    void listenMusic() {
+        System.out.println("\n--- Starting music mode ---");
+        tv.on();
+        audio.on();
+        audio.setVolume(7);
+        System.out.println("Audio input set to TV");
+    }
+
+    void setVolume(int level) {
+        audio.setVolume(level);
+    }
+
+    void turnOffAll() {
+        System.out.println("\n--- Turning off all devices ---");
+        dvd.stop();
+        audio.off();
+        tv.off();
+    }
+}
+//Composite
+abstract class FileSystemComponent {
+    String name;
+    FileSystemComponent(String name) { this.name = name; }
+    abstract void display(String indent);
+    abstract int getSize();
+}
+
+class File extends FileSystemComponent {
+    private int size;
+    File(String name, int size) {
+        super(name);
+        this.size = size;
+    }
+    void display(String indent) { System.out.println(indent + "- File: " + name + " (" + size + "KB)"); }
+    int getSize() { return size; }
+}
+
+class Directory extends FileSystemComponent {
+    private List<FileSystemComponent> components = new ArrayList<>();
+    Directory(String name) { super(name); }
+    void add(FileSystemComponent component) {
+        if (!components.contains(component)) components.add(component);
+    }
+    void remove(FileSystemComponent component) {
+        if (components.contains(component)) components.remove(component);
+    }
+    void display(String indent) {
+        System.out.println(indent + "+ Dir: " + name);
+        for (FileSystemComponent c : components) c.display(indent + "  ");
+    }
+    int getSize() {
+        int total = 0;
+        for (FileSystemComponent c : components) total += c.getSize();
+        return total;
+    }
+}
+
+public class DZ9 {
+    public static void main(String[] args) {
+        TV tv = new TV();
+        AudioSystem audio = new AudioSystem();
+        DVDPlayer dvd = new DVDPlayer();
+        GameConsole console = new GameConsole();
+        HomeTheaterFacade home = new HomeTheaterFacade(tv, audio, dvd, console);
+
+        home.watchMovie();
+        home.setVolume(5);
+        home.stopMovie();
+        home.playGame("FIFA 25");
+        home.listenMusic();
+        home.turnOffAll();
+
+        System.out.println("\n============================");
+        System.out.println("File System Composite Demo");
+        System.out.println("============================");
+
+        Directory root = new Directory("Root");
+        Directory docs = new Directory("Documents");
+        Directory pics = new Directory("Pictures");
+        File f1 = new File("resume.docx", 120);
+        File f2 = new File("song.mp3", 5000);
+        File f3 = new File("photo.png", 800);
+        File f4 = new File("notes.txt", 60);
+
+        docs.add(f1);
+        docs.add(f4);
+        pics.add(f3);
+        root.add(docs);
+        root.add(pics);
+        root.add(f2);
+
+        root.display("");
+        System.out.println("Total size: " + root.getSize() + "KB");
+    }
+}
